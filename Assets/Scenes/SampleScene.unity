@@ -119,6 +119,11 @@ NavMeshSettings:
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
+--- !u!20 &330585545 stripped
+Camera:
+  m_CorrespondingSourceObject: {fileID: 1849681223101729930, guid: e89faaacd2f261448b28e61b7a671a9b, type: 3}
+  m_PrefabInstance: {fileID: 2585095745280367625}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &387645673
 GameObject:
   m_ObjectHideFlags: 0
@@ -483,10 +488,10 @@ MonoBehaviour:
   bobberPrefab: {fileID: 4837419355537253088, guid: 7b1e999c46f27924f88e21d8215dfbbd, type: 3}
   waterLayer:
     serializedVersion: 2
-    m_Bits: 0
+    m_Bits: 16
   castDistance: 15
-  playerCamera: {fileID: 0}
-  castAction: {fileID: 0}
+  playerCamera: {fileID: 330585545}
+  castAction: {fileID: 1781555164194001046, guid: 052faaac586de48259a63d0c4782560b, type: 3}
 --- !u!1001 &1287840664
 PrefabInstance:
   m_ObjectHideFlags: 0
