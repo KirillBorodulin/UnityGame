@@ -486,12 +486,36 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   bobberPrefab: {fileID: 4837419355537253088, guid: 7b1e999c46f27924f88e21d8215dfbbd, type: 3}
-  waterLayer:
-    serializedVersion: 2
-    m_Bits: 16
   castDistance: 15
   playerCamera: {fileID: 330585545}
   castAction: {fileID: 1781555164194001046, guid: 052faaac586de48259a63d0c4782560b, type: 3}
+  hookAction: {fileID: -2473157174421701119, guid: 052faaac586de48259a63d0c4782560b, type: 3}
+  minBiteTime: 3
+  maxBiteTime: 8
+  hookWindowTime: 1
+  fightingMinigame: {fileID: 0}
+--- !u!114 &792830997
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 792830992}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 05a919302371d2e4bb6fb62236c92bd0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  startPosition: 0.5
+  fishPullSpeed: 0.3
+  clickPushSpeed: 0.5
+  leftFailZone: 0.1
+  rightFailZone: 0.9
+  successDuration: 5
+  clickAction: {fileID: -2473157174421701119, guid: 052faaac586de48259a63d0c4782560b, type: 3}
+  safeColor: {r: 0, g: 1, b: 0, a: 1}
+  warningColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
+  failColor: {r: 1, g: 0, b: 0, a: 1}
 --- !u!1001 &1287840664
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -628,6 +652,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 8303549293685458363, guid: e89faaacd2f261448b28e61b7a671a9b, type: 3}
       insertIndex: -1
       addedObject: {fileID: 792830996}
+    - targetCorrespondingSourceObject: {fileID: 8303549293685458363, guid: e89faaacd2f261448b28e61b7a671a9b, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 792830997}
   m_SourcePrefab: {fileID: 100100000, guid: e89faaacd2f261448b28e61b7a671a9b, type: 3}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
