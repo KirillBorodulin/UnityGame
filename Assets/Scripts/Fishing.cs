@@ -4,25 +4,28 @@ using UnityEngine.InputSystem;
 public class Fishing : MonoBehaviour
 {
     [Header("Настройки")]
-    [SerializeField] private GameObject bobberPrefab;   // Префаб поплавка
-    [SerializeField] private float castDistance = 15f;  // Дальность заброса
-    [SerializeField] private Camera playerCamera;       // Камера персонажа
+    [SerializeField] private GameObject bobberPrefab;
+    [SerializeField] private float castDistance = 15f;
+    [SerializeField] private Camera playerCamera;
 
     [Header("Кнопки")]
-    [SerializeField] private InputActionReference castAction;     // Заброс (E или ПКМ)
-    [SerializeField] private InputActionReference hookAction;     // Подсечка (ЛКМ)
+    [SerializeField] private InputActionReference castAction;
+    [SerializeField] private InputActionReference hookAction;
 
     [Header("Настройки поклёвки")]
-    [SerializeField] private float minBiteTime = 3f;    // Минимальное время до поклёвки
-    [SerializeField] private float maxBiteTime = 8f;    // Максимальное время до поклёвки
-    [SerializeField] private float hookWindowTime = 1f; // Время на подсечку (сек)
-    [SerializeField] private FightingMinigame fightingMinigame;
+    [SerializeField] private float minBiteTime = 3f;
+    [SerializeField] private float maxBiteTime = 8f;
+    [SerializeField] private float hookWindowTime = 1f;
 
-    private GameObject currentBobber;  // Текущий поплавок
-    private float biteTimer;           // Таймер до поклёвки
-    private bool isWaitingForBite;     // Ждём поклёвку?
-    private bool isBiting;             // Идёт поклёвка прямо сейчас?
-    private float hookTimer;           // Таймер окна подсечки
+    [Header("Вываживание")]
+    [SerializeField] private FishingFightDistance fightSystem;
+
+    private GameObject currentBobber;
+    private float biteTimer;
+    private bool isWaitingForBite;
+    private bool isBiting;
+    private float hookTimer;
+    private Vector3 lastCastPosition;  // ЗАПОМИНАЕМ ПОЗИЦИЮ ЗАБРОСА
 
     private void OnEnable()
     {
@@ -40,24 +43,38 @@ public class Fishing : MonoBehaviour
     {
         if (playerCamera == null)
             playerCamera = GetComponentInChildren<Camera>();
+
+        if (fightSystem != null)
+        {
+            fightSystem.OnWin += OnFightWin;
+            fightSystem.OnLose += OnFightLose;
+        }
+    }
+
+    private void OnDestroy()
+    {
+        if (fightSystem != null)
+        {
+            fightSystem.OnWin -= OnFightWin;
+            fightSystem.OnLose -= OnFightLose;
+        }
     }
 
     private void Update()
     {
-        // ОБРАБОТКА ЗАБРОСА
-        if (castAction != null && castAction.action.triggered && currentBobber == null)
+        bool isFighting = fightSystem != null && fightSystem.IsFighting();
+
+        if (castAction != null && castAction.action.triggered && currentBobber == null && !isBiting && !isFighting)
         {
             CastFishingRod();
         }
 
-        // ОБРАБОТКА ПОДСЕЧКИ (только если идёт поклёвка)
-        if (hookAction != null && hookAction.action.triggered && isBiting)
+        if (hookAction != null && hookAction.action.triggered && isBiting && !isFighting)
         {
             Hook();
         }
 
-        // ЛОГИКА ОЖИДАНИЯ ПОКЛЁВКИ
-        if (isWaitingForBite)
+        if (isWaitingForBite && !isFighting)
         {
             biteTimer -= Time.deltaTime;
             if (biteTimer <= 0f)
@@ -66,18 +83,16 @@ public class Fishing : MonoBehaviour
             }
         }
 
-        // ЛОГИКА ОКНА ПОДСЕЧКИ
-        if (isBiting)
+        if (isBiting && !isFighting)
         {
             hookTimer -= Time.deltaTime;
             if (hookTimer <= 0f)
             {
-                MissBite();  // Время вышло - рыба ушла
+                MissBite();
             }
         }
     }
 
-    // ЗАБРОС
     private void CastFishingRod()
     {
         Ray ray = new Ray(playerCamera.transform.position, playerCamera.transform.forward);
@@ -87,10 +102,8 @@ public class Fishing : MonoBehaviour
         {
             if (hit.collider.CompareTag("Water"))
             {
-                currentBobber = Instantiate(bobberPrefab, hit.point, Quaternion.identity);
-                Debug.Log($"🎣 Заброс! Ждём поклёвку...");
-
-                // Запускаем ожидание поклёвки
+                lastCastPosition = hit.point;  // ЗАПОМИНАЕМ ПОЗИЦИЮ
+                currentBobber = Instantiate(bobberPrefab, lastCastPosition, Quaternion.identity);
                 isWaitingForBite = true;
                 isBiting = false;
                 biteTimer = Random.Range(minBiteTime, maxBiteTime);
@@ -98,61 +111,61 @@ public class Fishing : MonoBehaviour
         }
     }
 
-    // НАЧАЛО ПОКЛЁВКИ (поплавок ныряет)
     private void StartBite()
     {
         isWaitingForBite = false;
         isBiting = true;
         hookTimer = hookWindowTime;
 
-        // Анимация: поплавок ныряет под воду
         if (currentBobber != null)
         {
-            // Опускаем поплавок вниз (имитация ныряния)
             currentBobber.transform.position += Vector3.down * 0.3f;
-            Debug.Log($"🐟 ПОКЛЁВКА! Нажми ЛКМ чтобы подсечь! ({hookWindowTime} сек)");
         }
     }
 
-    // УСПЕШНАЯ ПОДСЕЧКА
     private void Hook()
     {
         isBiting = false;
-        Debug.Log($"✅ ПОДСЕЧКА! Начинаем вываживание!");
 
-        // ЗАПУСКАЕМ МИНИ-ИГРУ
-        if (fightingMinigame != null)
+        // Сохраняем позицию поплавка перед удалением
+        Vector3 bobberPos = currentBobber != null ? currentBobber.transform.position : lastCastPosition;
+        RemoveBobber();
+
+        if (fightSystem != null)
         {
-            fightingMinigame.StartMinigame();
+            float randomWeight = Random.Range(0.5f, 2.5f);
+            // ПЕРЕДАЁМ ПОЗИЦИЮ ЗАБРОСА
+            fightSystem.StartFighting(bobberPos, randomWeight);
         }
-
-        RemoveBobber(); // Убираем поплавок
     }
 
-    // ПРОМАХНУЛИСЬ - рыба ушла
     private void MissBite()
     {
         isBiting = false;
-        Debug.Log($"❌ Рыба ушла! Поплавок всплывает...");
 
-        // Анимация: поплавок всплывает обратно
         if (currentBobber != null)
         {
             currentBobber.transform.position += Vector3.up * 0.3f;
         }
 
-        // Запускаем новый цикл ожидания
         isWaitingForBite = true;
         biteTimer = Random.Range(minBiteTime, maxBiteTime);
     }
 
-    // Удалить поплавок (рыба поймана или вышли из игры)
+    private void OnFightWin()
+    {
+        Debug.Log("Рыба поймана!");
+    }
+
+    private void OnFightLose()
+    {
+        Debug.Log("Рыба ушла...");
+    }
+
     public void RemoveBobber()
     {
         if (currentBobber != null)
             Destroy(currentBobber);
         currentBobber = null;
-        isWaitingForBite = false;
-        isBiting = false;
     }
 }
